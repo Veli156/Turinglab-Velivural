@@ -1,78 +1,72 @@
 # TuringLab
 
 **Selçuk Üniversitesi · Bilgisayar Mühendisliği · Hesaplama Kuramı Final Ödevi**  
-**Öğrenci:** [Veli Vural]
+**Öğrenci:** Veli Vural
 
 Deterministic tek-şeritli Turing makinelerini çalıştıran Python simülasyon kütüphanesi.  
 Bonus olarak çok-şeritli TM, non-deterministic TM ve görselleştirici de içerir.
 
 ---
 
-## Kurulum
+## Kurulum ve Çalıştırma
 
+### 1. Repoyu klonla
 ```bash
-git clone https://github.com/kullanici-adi/turinglab-adsoyad.git
-cd turinglab-adsoyad
-pip install -r requirements.txt
+git clone https://github.com/Veli156/Turinglab-Velivural.git
+cd Turinglab-Velivural
 ```
+
+### 2. Bağımlılıkları yükle
+```bash
+pip install pyyaml pytest pillow imageio
+```
+
+### 3. Testleri çalıştır
+```bash
+python -m pytest tests/ -v
+```
+38 testin tamamı geçmeli.
+
+### 4. Canlı simülasyonu çalıştır
+```bash
+python turinglab/demo_run.py
+```
+`binary_compare` makinesinin `11#10` girdisi üzerinde adım adım çalışmasını gösterir.
+
+---
 
 ## Kullanım
 
 ```python
 from turinglab import SingleTapeTM, RunResult
 
-# YAML dosyasından TM yükle
 tm = SingleTapeTM.from_yaml("machines/binary_compare.yaml")
+result = tm.run("11#10", max_steps=1000, verbose=True)
 
-# Çalıştır
-result = tm.run("11#10", max_steps=1000, verbose=False)
+print(result.accepted)       # True
+print(result.reason)         # 'accept'
+print(result.final_tape)     # şerit içeriği
+print(result.steps)          # adım sayısı
 
-print(result.accepted)     # True
-print(result.reason)       # 'accept'
-print(result.final_tape)   # şerit içeriği
-print(result.steps)        # adım sayısı
-
-# Tarihçe — her adım bir Configuration nesnesi
+# Her adım bir Configuration nesnesi
 config = result.history[0]
-print(config.state)         # 'q0'
-print(config.tape)          # '[1]1#10'
-print(config.head_position) # 0
+print(config.state)          # 'q0'
+print(config.tape)           # '[1]1#10'
+print(config.head_position)  # 0
 ```
 
-### Verbose mod
+---
 
-```python
-tm.run("11#10", verbose=True)
-# Adım 0 | Durum: q0 | Şerit: [1]1#10 | Hareket: R
-# Adım 1 | Durum: q0 | Şerit: 1[1]#10 | Hareket: R
-# ...
-```
+## Tasarlanan Makineler
 
-### Multi-tape (Bonus A)
+| Makine | Açıklama | Kabul koşulu |
+|---|---|---|
+| `unary_to_binary` | Tekli sayıyı ikiliye çevirir | Her zaman kabul (LSB-first çıktı) |
+| `binary_compare` | İki ikili sayıyı karşılaştırır | Sol > Sağ ise kabul |
+| `string_copy` | Dizgiyi kopyalar | Her zaman kabul (w → w#w) |
+| `student_choice` | Parantez denge kontrolü | Dengeli ise kabul |
 
-```python
-from turinglab import MultiTapeTM
-tm = MultiTapeTM.from_yaml("machines/multi_tape_example.yaml")
-result = tm.run(["101", "110"])
-print(result.final_tapes)
-```
-
-### Non-deterministic TM (Bonus B)
-
-```python
-from turinglab import NondeterministicTM
-# NTM manuel oluşturma
-result = tm.run("001", max_depth=100, max_branches=10000)
-print(result.accepted)
-print(result.accepting_paths)
-```
-
-## Testleri Çalıştırma
-
-```bash
-cd turinglab
-pytest tests/ -v
-```
+---
 
 ## Proje Yapısı
 
@@ -101,12 +95,3 @@ turinglab/
 └── docs/
     └── design_notes.md
 ```
-
-## Tasarlanan Makineler
-
-| Makine | Açıklama | Kabul koşulu |
-|---|---|---|
-| `unary_to_binary` | Tekli sayıyı ikiliye çevirir | Her zaman kabul (LSB-first çıktı) |
-| `binary_compare` | İki ikili sayıyı karşılaştırır | Sol > Sağ ise kabul |
-| `string_copy` | Dizgiyi kopyalar | Her zaman kabul (w → w#w) |
-| `student_choice` | Parantez denge kontrolü | Dengeli ise kabul |
