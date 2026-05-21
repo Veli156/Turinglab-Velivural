@@ -1,7 +1,7 @@
 # TuringLab — Mini Rapor
 
-**Ders:** Hesaplama Kuramı · Bilgisayar Mühendisliği  
-**Öğrenci:** [Adınız Soyadınız]  
+**Ders:** Otomata
+**Öğrenci:** [Veli Vural]  
 **Tarih:** Mayıs 2026  
 
 ---

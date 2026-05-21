@@ -1,7 +1,7 @@
 # TuringLab
 
 **Selçuk Üniversitesi · Bilgisayar Mühendisliği · Hesaplama Kuramı Final Ödevi**  
-**Öğrenci:** [Adınız Soyadınız]
+**Öğrenci:** [Veli Vural]
 
 Deterministic tek-şeritli Turing makinelerini çalıştıran Python simülasyon kütüphanesi.  
 Bonus olarak çok-şeritli TM, non-deterministic TM ve görselleştirici de içerir.
