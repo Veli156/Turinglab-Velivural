@@ -1,0 +1,32 @@
+states: [q0, q_find_hash, q_inc, q_back, q_clean, q_accept]
+input_alphabet: ["1"]
+tape_alphabet: ["1", "0", "B", "X", "#"]
+start_state: q0
+accept_states: [q_accept]
+transitions:
+  # Find a '1', mark it 'X'
+  - {state: q0, read: "1", next: q_find_hash, write: "X", move: R}
+  - {state: q0, read: "X", next: q0, write: "X", move: R}
+  - {state: q0, read: "B", next: q_clean, write: "B", move: L}
+  - {state: q0, read: "#", next: q_clean, write: "B", move: L}
+  
+  # Go right to find/place #
+  - {state: q_find_hash, read: "1", next: q_find_hash, write: "1", move: R}
+  - {state: q_find_hash, read: "X", next: q_find_hash, write: "X", move: R}
+  - {state: q_find_hash, read: "#", next: q_inc, write: "#", move: R}
+  - {state: q_find_hash, read: "B", next: q_inc, write: "#", move: R}
+  
+  # Increment binary number (LSB-first)
+  - {state: q_inc, read: "0", next: q_back, write: "1", move: L}
+  - {state: q_inc, read: "1", next: q_inc, write: "0", move: R} # Carry over
+  - {state: q_inc, read: "B", next: q_back, write: "1", move: L}
+  
+  # Go back left
+  - {state: q_back, read: "0", next: q_back, write: "0", move: L}
+  - {state: q_back, read: "1", next: q_back, write: "1", move: L}
+  - {state: q_back, read: "#", next: q_back, write: "#", move: L}
+  - {state: q_back, read: "X", next: q0, write: "X", move: R}
+  
+  # Clean up X and #
+  - {state: q_clean, read: "X", next: q_clean, write: "B", move: L}
+  - {state: q_clean, read: "B", next: q_accept, write: "B", move: R}

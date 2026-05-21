@@ -1,0 +1,40 @@
+states: [q0, q_find_0, q_cmp_0, q_find_1, q_cmp_1, q_back, q_check_end, q_accept, q_reject]
+input_alphabet: ["0", "1", "#"]
+tape_alphabet: ["0", "1", "X", "#", "B"]
+start_state: q0
+accept_states: [q_accept]
+reject_states: [q_reject]
+transitions:
+  # Oku ve isaretle
+  - {state: q0, read: "0", next: q_find_0, write: "X", move: R}
+  - {state: q0, read: "1", next: q_find_1, write: "X", move: R}
+  - {state: q0, read: "X", next: q0, write: "X", move: R}
+  - {state: q0, read: "#", next: q_check_end, write: "#", move: R}
+  
+  # # isaretini gec ve eslesen bit bul
+  - {state: q_find_0, read: "0", next: q_find_0, write: "0", move: R}
+  - {state: q_find_0, read: "1", next: q_find_0, write: "1", move: R}
+  - {state: q_find_0, read: "#", next: q_cmp_0, write: "#", move: R}
+  
+  - {state: q_cmp_0, read: "X", next: q_cmp_0, write: "X", move: R}
+  - {state: q_cmp_0, read: "0", next: q_back, write: "X", move: L}
+  - {state: q_cmp_0, read: "1", next: q_reject, write: "1", move: R} # Sol < Sag
+  
+  - {state: q_find_1, read: "0", next: q_find_1, write: "0", move: R}
+  - {state: q_find_1, read: "1", next: q_find_1, write: "1", move: R}
+  - {state: q_find_1, read: "#", next: q_cmp_1, write: "#", move: R}
+  
+  - {state: q_cmp_1, read: "X", next: q_cmp_1, write: "X", move: R}
+  - {state: q_cmp_1, read: "1", next: q_back, write: "X", move: L}
+  - {state: q_cmp_1, read: "0", next: q_accept, write: "0", move: R} # Sol > Sag
+  
+  # Geri don
+  - {state: q_back, read: "0", next: q_back, write: "0", move: L}
+  - {state: q_back, read: "1", next: q_back, write: "1", move: L}
+  - {state: q_back, read: "X", next: q_back, write: "X", move: L}
+  - {state: q_back, read: "#", next: q_back, write: "#", move: L}
+  - {state: q_back, read: "B", next: q0, write: "B", move: R}
+  
+  # Kontrol et, eger esitse reddet (ilk > ikinci degil)
+  - {state: q_check_end, read: "X", next: q_check_end, write: "X", move: R}
+  - {state: q_check_end, read: "B", next: q_reject, write: "B", move: R}

@@ -1,0 +1,42 @@
+states: [q0, q_copy_a, q_copy_a_after, q_copy_b, q_copy_b_after, q_back, q_restore, q_accept]
+input_alphabet: ["a", "b"]
+tape_alphabet: ["a", "b", "X", "Y", "#", "B"]
+start_state: q0
+accept_states: [q_accept]
+transitions:
+  - {state: q0, read: "a", next: q_copy_a, write: "X", move: R}
+  - {state: q0, read: "b", next: q_copy_b, write: "Y", move: R}
+  - {state: q0, read: "#", next: q_restore, write: "#", move: L}
+  - {state: q0, read: "B", next: q_restore, write: "#", move: L}
+  
+  # a kopyalama
+  - {state: q_copy_a, read: "a", next: q_copy_a, write: "a", move: R}
+  - {state: q_copy_a, read: "b", next: q_copy_a, write: "b", move: R}
+  - {state: q_copy_a, read: "#", next: q_copy_a_after, write: "#", move: R}
+  - {state: q_copy_a, read: "B", next: q_copy_a_after, write: "#", move: R}
+  
+  - {state: q_copy_a_after, read: "a", next: q_copy_a_after, write: "a", move: R}
+  - {state: q_copy_a_after, read: "b", next: q_copy_a_after, write: "b", move: R}
+  - {state: q_copy_a_after, read: "B", next: q_back, write: "a", move: L}
+  
+  # b kopyalama
+  - {state: q_copy_b, read: "a", next: q_copy_b, write: "a", move: R}
+  - {state: q_copy_b, read: "b", next: q_copy_b, write: "b", move: R}
+  - {state: q_copy_b, read: "#", next: q_copy_b_after, write: "#", move: R}
+  - {state: q_copy_b, read: "B", next: q_copy_b_after, write: "#", move: R}
+  
+  - {state: q_copy_b_after, read: "a", next: q_copy_b_after, write: "a", move: R}
+  - {state: q_copy_b_after, read: "b", next: q_copy_b_after, write: "b", move: R}
+  - {state: q_copy_b_after, read: "B", next: q_back, write: "b", move: L}
+  
+  # basa don
+  - {state: q_back, read: "a", next: q_back, write: "a", move: L}
+  - {state: q_back, read: "b", next: q_back, write: "b", move: L}
+  - {state: q_back, read: "#", next: q_back, write: "#", move: L}
+  - {state: q_back, read: "X", next: q0, write: "X", move: R}
+  - {state: q_back, read: "Y", next: q0, write: "Y", move: R}
+  
+  # geri yukle
+  - {state: q_restore, read: "X", next: q_restore, write: "a", move: L}
+  - {state: q_restore, read: "Y", next: q_restore, write: "b", move: L}
+  - {state: q_restore, read: "B", next: q_accept, write: "B", move: R}

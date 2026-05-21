@@ -1,0 +1,29 @@
+states: [q0, q_find_close, q_back, q_check_all_x, q_accept, q_reject]
+input_alphabet: ["(", ")"]
+tape_alphabet: ["(", ")", "X", "Y", "B"]
+start_state: q0
+accept_states: [q_accept]
+reject_states: [q_reject]
+transitions:
+  - {state: q0, read: "(", next: q_find_close, write: "X", move: R}
+  - {state: q0, read: ")", next: q_reject, write: ")", move: R}
+  - {state: q0, read: "X", next: q0, write: "X", move: R}
+  - {state: q0, read: "Y", next: q0, write: "Y", move: R}
+  - {state: q0, read: "B", next: q_check_all_x, write: "B", move: L}
+  
+  - {state: q_find_close, read: "(", next: q_find_close, write: "(", move: R}
+  - {state: q_find_close, read: "X", next: q_find_close, write: "X", move: R}
+  - {state: q_find_close, read: "Y", next: q_find_close, write: "Y", move: R}
+  - {state: q_find_close, read: ")", next: q_back, write: "Y", move: L}
+  - {state: q_find_close, read: "B", next: q_reject, write: "B", move: R}
+  
+  - {state: q_back, read: "(", next: q_back, write: "(", move: L}
+  - {state: q_back, read: "X", next: q_back, write: "X", move: L}
+  - {state: q_back, read: "Y", next: q_back, write: "Y", move: L}
+  - {state: q_back, read: "B", next: q0, write: "B", move: R}
+  
+  - {state: q_check_all_x, read: "X", next: q_check_all_x, write: "X", move: L}
+  - {state: q_check_all_x, read: "Y", next: q_check_all_x, write: "Y", move: L}
+  - {state: q_check_all_x, read: "(", next: q_reject, write: "(", move: L}
+  - {state: q_check_all_x, read: ")", next: q_reject, write: ")", move: L}
+  - {state: q_check_all_x, read: "B", next: q_accept, write: "B", move: R}
