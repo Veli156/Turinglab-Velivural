@@ -1,87 +1,75 @@
 # TuringLab — Mini Rapor
 
-**Ders:** Otomata
-**Öğrenci:** [Veli Vural]  
-**Tarih:** Mayıs 2026  
+**Ders:** Hesaplama Kuramı · Bilgisayar Mühendisliği  
+**Öğrenci:** Veli Vural  
+**Tarih:** Mayıs 2026
 
 ---
 
 ## 1. Giriş
 
-TuringLab, deterministic tek-şeritli Turing makinelerini (ve bonus olarak çok-şeritli ile non-deterministic varyantlarını) Python'da çalıştıran bir simülasyon kütüphanesidir. Proje; bir TM motorunu sıfırdan yazmayı, bu motorla somut problemleri çözmeyi ve hesaplama kuramının soyut kavramlarını elle tutulan bir artefakta dönüştürmeyi hedefler.
+TuringLab, Turing makinelerini Python'da çalıştıran bir simülasyon kütüphanesidir. Ödev boyunca fark ettiğim şey şu oldu: kağıt üzerinde anlaşılır görünen geçiş kuralları, koda döküldüğünde beklenmedik köşeler çıkarıyor. Özellikle şeridi nasıl temsil edeceğim sorusu başta basit göründü ama Python'da string immutable olduğundan her yazma işlemi yeni bir nesne yaratıyordu — bunu fark edince `dict[int, str]` yapısına geçtim.
 
 ---
 
 ## 2. Mimari
 
-Proje `turinglab/` paketi altında organize edilmiştir:
+Proje üç ana katmandan oluşuyor:
 
-- **`tm_engine.py`** — Çekirdeği oluşturur. `SingleTapeTM` sınıfı YAML'dan TM yükler ve `run()` metoduyla simülasyonu yürütür. Şerit dahili olarak `dict[int, str]` (sparse representation) ile tutulur; bu sayede hem sol hem sağ sonsuz genişleyebilir ve Python'un negatif indeks sorununu ortadan kaldırır. Her adımın anlık görüntüsü `Configuration` dataclass'ı olarak `history` listesine eklenir; bu, `result.history[i].state` gibi attribute erişimine olanak tanır.
+**Motor katmanı** (`tm_engine.py`): `SingleTapeTM` sınıfı YAML'dan makine tanımını okuyup `run()` metoduyla simülasyonu yürütür. Şerit sparse dictionary olarak tutulur — bu sayede kafa sola taşsa bile negatif indeks sorunu yaşanmaz. Her adımın anlık görüntüsü `Configuration` dataclass'ı olarak `history` listesine eklenir.
 
-- **`multi_tape.py`** (Bonus A) — `MultiTapeTM` sınıfı, YAML'da `k` ile belirtilen şerit sayısını destekler. Her şerit bağımsız bir sparse dict olarak tutulur.
+**Makine tanımları** (`machines/`): Dört YAML dosyası. YAML formatını seçmemin sebebi hem okunabilir hem de motordan bağımsız olması — makineyi değiştirmek için koda dokunmak gerekmiyor.
 
-- **`ntm.py`** (Bonus B) — `NondeterministicTM`, BFS (genişlik öncelikli arama) ile hesaplama ağacını gezdiğinden sonsuz dallara takılmaz; `max_depth` ve `max_branches` parametreleriyle kontrol altında tutulur.
+**Test katmanı** (`tests/`): 38 test, her makine için kabul/ret/kenar durum senaryoları.
 
-- **`visualizer.py`** (Bonus D) — Pillow ile her adım için PNG karesi, imageio ile GIF üretir.
-
-**Önemli tasarım kararları:**
+Önemli tasarım kararları:
 
 | Karar | Tercih | Gerekçe |
 |---|---|---|
-| Şerit yapısı | `dict[int, str]` | Negatif indeks sorununu önler, sparse erişim O(1) |
-| Blank sembolü | `"B"` | Görünür karakter; debug kolaylığı |
-| History tipi | `Configuration` dataclass | `config.state` gibi attribute erişimi mümkün |
+| Şerit yapısı | `dict[int, str]` | Negatif indeks sorununu önler |
+| Blank sembolü | `B` | Görünür karakter, debug kolay |
+| History tipi | `Configuration` dataclass | `config.state` gibi erişim |
 | NTM tarama | BFS | DFS sonsuz dallarda takılır |
 
 ---
 
 ## 3. Tasarlanan TM'ler
 
-**TM-1 — Unary → Binary Çevirici:** Her `1`'i işaretleyip (X) binary sayacı artırma döngüsü kurar. Çıktı LSB-first (en az anlamlı bit solda) formatındadır; bu tercih `design_notes.md`'de belirtilmiştir. Girdi uzunluğu n için O(n²) adım gerekir.
+**TM-1 (Unary → Binary):** Her `1`'i sırayla işaretleyip binary sayacı artırma mantığıyla çalışıyor. Çıktı LSB-first formatında — yani 4 için `001` çıkıyor. Bu tercihi `design_notes.md`'de belirttim.
 
-**TM-2 — İkili Karşılaştırma:** MSB'den başlayarak her bit çifti işaretlenerek karşılaştırılır. Sol > sağ ise kabul, aksi hâlde reddeder. Tek şeritte ileri-geri tarama O(n²) adım gerektirir; bu, çok-şeritli TM'nin motivasyonunu doğal olarak ortaya koyar.
+**TM-2 (Binary Karşılaştırma):** En zorlu makine bu oldu. MSB'den başlayarak her bit çiftini karşılaştırıyorum ama tek şeritte bunu yapmak çok fazla ileri-geri tarama gerektiriyor. Eşit sayılar için ayrı bir `q_check_end` durumu eklemek zorunda kaldım yoksa makine sonsuza gidiyordu. Bu makineyi tasarlarken çok-şeritli TM'nin neden var olduğunu gerçekten anladım.
 
-**TM-3 — Dizgi Kopyalayıcı:** `a` → X, `b` → Y şeklinde işaretleme yaparak karakterleri sağdaki kopyaya aktarır; ardından X/Y'leri orijinal sembollere geri yükler. `w#w` çıktısını üretir. O(n²) adım.
+**TM-3 (Dizgi Kopyalayıcı):** `a` → `X`, `b` → `Y` şeklinde işaretleyip sağa kopyalıyor, sonra geri yükleyerek `w#w` üretiyor. `q_restore` durumunda sola değil sağa ilerleme yazmıştım, verbose modda bakınca fark ettim.
 
-**TM-4 — Parantez Denge Kontrolü:** Her `(` için en yakın eşleşmemiş `)` bulunur; eşleşen çiftler X/Y ile işaretlenir. Tüm karakterler işaretlendiyse kabul, aksi reddeder. Bu makine en ilginç kenar durumları barındırır: `)` ile başlayan girdi, tek karakter, iç içe parantezler.
-
-**En zorlayıcı:** TM-2 — Tek şeritte bitwise karşılaştırma için gereken ileri-geri tarama sayısı ve `q_check_end` durumuyla eşitlik durumunun ayrı ele alınması beklenenden karmaşık çıktı.
+**TM-4 (Parantez Dengesi):** `)` ile başlayan girdiler başta yanlışlıkla kabul ediliyordu. `q0`'da `)` için doğrudan `q_reject` geçişi eklemeyi unutmuştum.
 
 ---
 
 ## 4. Kavramsal Tartışma
 
-### (c) Modern Bir Programlama Dili ile TM Arasındaki Boşluk
+### Modern Bir Programlama Dili ile TM Arasındaki Boşluk
 
-Turing makinesi ve Python hesaplama gücü açısından eşdeğerdir (Church-Turing tezi); Python'da hesaplanabilen her şey bir TM ile de hesaplanabilir, tersi de doğrudur. Ancak **soyutlama düzeyi** arasındaki uçurum derindir.
+Python ile TM aynı hesaplama gücüne sahip — Church-Turing tezine göre biri yapabiliyorsa diğeri de yapabilir. Ama soyutlama farkı devasa.
 
-Python, veri yapıları (liste, sözlük, küme), yüksek seviyeli kontrol akışı (döngüler, istisnalar, üretecler), modül sistemi ve dinamik tip denetimi sunar. Programcı "ne yapılacağını" tanımlar; yorumlayıcı "nasıl yapılacağını" yönetir. TM ise yalnızca beş bileşenden oluşur: durum kümesi, alfabe, geçiş fonksiyonu, başlangıç durumu, kabul durumları. Her adımda yalnızca bir sembol okunur, bir sembol yazılır, kafa bir adım kayar.
+Python'da `int(a, 2) > int(b, 2)` yazmak iki saniye sürer. Aynı işi TM'de yapmak için 30'dan fazla geçiş kuralı gerekiyor, O(n²) adım atılıyor. Bu sadece hız farkı değil — TM'de "değişken" yok, "fonksiyon" yok. Her şeyi durum ve şerit üzerinden ifade etmek zorundasın. Bilgiyi taşımanın tek yolu durum olmak.
 
-Bu boşluğun pratik yansıması TuringLab'da açıkça görülür: Python'da üç satırla yazılabilen "ikili sayıyı bir artır" işlemi, TM'de sekiz geçiş kuralı gerektirir. `binary_compare` TM'i, Python'un iki satırlık `int(a, 2) > int(b, 2)` karşılaştırmasını 30'dan fazla geçiş kuralına indirger.
+Bu kısıtlılık aslında bir güç: TM'nin bu kadar sade olması, hangi problemlerin prensipte çözülemez olduğunu kanıtlamayı mümkün kılıyor. Python'un soyutlama katmanları bu sınırları gizler. Durma Problemini Python'da "çözdüm" diyemezsin çünkü argümanın tüm gücü TM'nin minimalliğinden geliyor.
 
-Boşluk, **zaman ve alan karmaşıklığında** da kendini gösterir: Python'da O(1) olan bir sözlük erişimi, TM'de O(n) ileri-geri taramaya dönüşebilir. Bununla birlikte bu kısıtlılık bir zayıflık değil, teorik analizin gücüdür: TM'nin minimalist yapısı, hangi problemlerin prensipte çözülemez olduğunu (Durma Problemi gibi) kanıtlamayı mümkün kılar; oysa Python'un soyutlama katmanları bu sınırları gizler.
+Bu ödevi yaparken fark ettiğim şey şu: TM tasarlamak aslında çok kısıtlı bir ortamda algoritma yazmak. Ve o kısıtlar içinde çalışmak, algoritmanın özünü çok daha net görünür kılıyor.
 
 ---
 
 ## 5. Sınırlar ve İleri Çalışma
 
-**Mevcut sınırlar:**
+`binary_compare` şu an yalnızca aynı bit uzunluğundaki sayıları doğru karşılaştırıyor — farklı uzunlukta girdi için ön-işlem gerekiyor. Görselleştirici sadece tek şeritli makineleri destekliyor. Bonus C'yi (karşılaştırmalı analiz grafiği) yapmak istedim ama zaman yetmedi.
 
-- Görselleştirici (`visualizer.py`) yalnızca tek-şeritli TM'leri destekler; multi-tape için genişletilmedi.
-- `binary_compare` yalnızca aynı bit uzunluğundaki sayıları doğru karşılaştırır; farklı uzunlukta girdiler için ek ön-işlem gerekir.
-- NTM testi yalnızca basit bir örnek içeriyor; daha kapsamlı NTM makineleri tasarlanabilir.
-
-**Bir hafta daha olsaydı:**
-
-- Bonus C tamamlanarak tek-şeritli, çok-şeritli ve NTM arasında adım sayısı karşılaştırması yapılacak ve matplotlib grafiği eklenecekti.
-- `binary_compare` farklı uzunluktaki girdileri de doğru işleyecek şekilde genişletilecekti.
-- Web tabanlı interaktif bir görselleştirici (adım adım ileri/geri) eklenebilirdi.
+Bir hafta daha olsaydı: farklı uzunluktaki binary sayılar için `binary_compare`'i genişletirdim ve tek şeritli vs çok şeritli adım sayısı karşılaştırmasını matplotlib ile görselleştirirdim.
 
 ---
 
 ## 6. Kaynakça
 
 - Sipser, M. (2013). *Introduction to the Theory of Computation* (3rd ed.). Cengage Learning.
-- Python Software Foundation. *Python 3.12 Documentation*. https://docs.python.org/3/
-- PyYAML Documentation. https://pyyaml.org/wiki/PyYAMLDocumentation
-- Pytest Documentation. https://docs.pytest.org/
+- Python 3.13 Dokümantasyonu. https://docs.python.org/3/
+- PyYAML Dokümantasyonu. https://pyyaml.org/
+- Pytest Dokümantasyonu. https://docs.pytest.org/
